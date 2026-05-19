@@ -1,204 +1,199 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { useAnalysisStore } from "@/store/analysisStore";
+import { Settings, Monitor, Key, Database, ArrowLeft, CheckCircle2, ShieldAlert, Save } from "lucide-react";
 
 export default function SettingsPage() {
-  const [layout, setLayout] = useState<"ORGANIC" | "HIERARCHICAL" | "RADIAL">("ORGANIC");
-  const [animations, setAnimations] = useState(true);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [osvEnabled, setOsvEnabled] = useState(true);
-  const [cleared, setCleared] = useState(false);
-  const [activeTab, setActiveTab] = useState("Appearance");
-  const { clearAnalysis } = useAnalysisStore();
+  const [activeTab, setActiveTab] = useState("visuals");
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [graphLayer, setGraphLayer] = useState("3d");
+  const [osvKey, setOsvKey] = useState("");
+  const [geminiKey, setGeminiKey] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
 
-  const handleClearCache = () => {
-    clearAnalysis();
-    if (typeof window !== "undefined") localStorage.clear();
-    setCleared(true);
-    setTimeout(() => setCleared(false), 3000);
+  useEffect(() => {
+    const savedAnim = localStorage.getItem("riskLens_animations");
+    if (savedAnim !== null) setAnimationsEnabled(savedAnim === "true");
+    const savedLayer = localStorage.getItem("riskLens_graphLayer");
+    if (savedLayer) setGraphLayer(savedLayer);
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem("riskLens_animations", animationsEnabled.toString());
+    localStorage.setItem("riskLens_graphLayer", graphLayer);
+
+    // Trigger success feedback
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
   };
 
+  const tabs = [
+    { id: "visuals", label: "Visuals & Engine", icon: Monitor },
+    { id: "api", label: "API & Authentication", icon: Key },
+    { id: "system", label: "System Preferences", icon: Database },
+  ];
+
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-[#1a1a1a] glass">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#00FF41] animate-pulse" />
-            <span className="font-bold text-sm font-mono">
-              risk<span className="text-[#00FF41]">LENS</span>
-            </span>
-          </Link>
-          <div className="text-[#444]">|</div>
-          <h1 className="text-xl font-bold font-mono">Settings</h1>
-        </div>
-        <div className="w-8 h-8 bg-[#1a1a1a] border border-[#333] rounded-full flex items-center justify-center text-xs font-bold text-[#00FF41] font-mono">
-          JD
-        </div>
-      </header>
-
-      <div className="flex">
-        <aside className="w-64 min-h-screen border-r border-[#1a1a1a] p-6 glass">
-          <nav className="space-y-1 font-mono">
-            {["Appearance", "Data Sources", "Export Defaults", "Notifications"].map((item) => (
-              <button
-                key={item}
-                onClick={() => setActiveTab(item)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
-                  activeTab === item ? "bg-[#1a1a1a] text-[#00FF41]" : "text-[#888] hover:text-white"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-            <div className="pt-4 border-t border-[#1a1a1a] mt-4">
-              <button className="w-full text-left px-3 py-2 rounded-lg text-sm text-[#888] hover:text-white">
-                About risk-LENS
-              </button>
+    <div className="min-h-screen bg-[#000000] text-white font-sans overflow-x-hidden">
+      <nav className="fixed top-0 w-full z-50 border-b border-white/[0.05] bg-[#000000]/80 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="p-2 hover:bg-neutral-900 rounded-lg transition-colors border border-transparent hover:border-white/[0.05]">
+              <ArrowLeft className="w-5 h-5 text-neutral-400 hover:text-white" />
+            </Link>
+            <div className="flex items-center gap-3">
+              <Settings className="w-5 h-5 text-[#00FF41]" />
+              <span className="font-mono font-bold text-lg tracking-tight uppercase">
+                Configuration <span className="text-neutral-500">// settings.sh</span>
+              </span>
             </div>
-          </nav>
-        </aside>
+          </div>
+        </div>
+      </nav>
 
-        <main className="flex-1 p-8 max-w-3xl">
-          {/* Appearance */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-12"
-          >
-            <h2 className="text-2xl font-bold mb-1 font-mono">Appearance</h2>
-            <p className="text-[#888] text-sm mb-6">Customize how you visualize your supply chain risk.</p>
+      <div className="max-w-7xl mx-auto px-6 pt-32 pb-24 grid grid-cols-1 md:grid-cols-12 gap-12">
+        <div className="md:col-span-3 space-y-2">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-mono text-sm uppercase tracking-wider transition-all duration-300 ${isActive
+                    ? "bg-neutral-900 border border-[#00FF41]/30 text-[#00FF41]"
+                    : "bg-transparent border border-transparent text-neutral-400 hover:bg-neutral-950 hover:text-white"
+                  }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-[#00FF41]" : "text-neutral-500"}`} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
 
-            <div className="glass border border-[#1a1a1a] rounded-2xl divide-y divide-[#1a1a1a]">
-              <div className="p-5 flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">Graph Layout Default</h3>
-                  <p className="text-[#555] text-sm">Select default force simulation.</p>
-                </div>
-                <div className="flex rounded-lg overflow-hidden border border-[#333]">
-                  {(["ORGANIC", "HIERARCHICAL", "RADIAL"] as const).map((l) => (
+        <div className="md:col-span-9">
+          <div className="bg-neutral-950/50 border border-white/[0.05] rounded-2xl p-8 backdrop-blur-sm min-h-[500px] flex flex-col justify-between">
+
+            <div className="flex-1">
+              {activeTab === "visuals" && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight mb-2">Viewport & Graphics</h2>
+                    <p className="text-neutral-400 text-sm">Configure the performance and rendering outputs of the 3D topology matrix.</p>
+                  </div>
+                  <div className="space-y-4">
+                    <label className="font-mono text-xs text-neutral-500 uppercase tracking-widest">Default Graph Topology Layer</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button
+                        onClick={() => setGraphLayer("3d")}
+                        className={`flex flex-col items-start p-5 rounded-xl border transition-all duration-300 ${graphLayer === "3d" ? "bg-neutral-900 border-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.1)]" : "bg-black border-white/[0.05] hover:border-neutral-700"
+                          }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-3">
+                          <span className={`font-bold ${graphLayer === "3d" ? "text-white" : "text-neutral-400"}`}>3D Orbital Matrix</span>
+                          {graphLayer === "3d" && <CheckCircle2 className="w-5 h-5 text-[#00FF41]" />}
+                        </div>
+                        <p className="text-xs text-neutral-500 text-left">Hardware-accelerated WebGL spatial rendering with trust-chain depth axes.</p>
+                      </button>
+                      <button
+                        onClick={() => setGraphLayer("2d")}
+                        className={`flex flex-col items-start p-5 rounded-xl border transition-all duration-300 ${graphLayer === "2d" ? "bg-neutral-900 border-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.1)]" : "bg-black border-white/[0.05] hover:border-neutral-700"
+                          }`}
+                      >
+                        <div className="flex items-center justify-between w-full mb-3">
+                          <span className={`font-bold ${graphLayer === "2d" ? "text-white" : "text-neutral-400"}`}>2D Flat Tree</span>
+                          {graphLayer === "2d" && <CheckCircle2 className="w-5 h-5 text-[#00FF41]" />}
+                        </div>
+                        <p className="text-xs text-neutral-500 text-left">Optimized hierarchical node map for lower-end hardware compatibility.</p>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="w-full h-px bg-white/[0.05]" />
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <label className="font-mono text-sm text-white">Enable Threat Animations</label>
+                      <p className="text-xs text-neutral-500">Allow shader glitches and pulse shockwaves during simulated breaches.</p>
+                    </div>
                     <button
-                      key={l}
-                      onClick={() => setLayout(l)}
-                      className={`px-3 py-2 text-xs font-semibold font-mono transition-all ${
-                        layout === l ? "bg-[#1a1a1a] text-white" : "text-[#555] hover:text-white"
-                      }`}
+                      onClick={() => setAnimationsEnabled(!animationsEnabled)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${animationsEnabled ? "bg-[#00FF41]" : "bg-neutral-700"
+                        }`}
                     >
-                      {l}
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-black transition duration-200 ease-in-out ${animationsEnabled ? "translate-x-6" : "translate-x-1"
+                        }`} />
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="p-5 flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">Animations</h3>
-                  <p className="text-[#555] text-sm">Enable pulsing nodes and flowing edges.</p>
+              {activeTab === "api" && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight mb-2">External Integrations</h2>
+                    <p className="text-neutral-400 text-sm">Manage API keys for live database querying and AI remediation tools.</p>
+                  </div>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="font-mono text-xs text-neutral-500 uppercase tracking-widest">Google OSV API Key (Optional)</label>
+                      <input type="password" value={osvKey} onChange={(e) => setOsvKey(e.target.value)} placeholder="Leave blank for public unauthenticated queries..." className="w-full bg-black border border-white/[0.1] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#00FF41] transition-colors text-white font-mono placeholder:text-neutral-700" />
+                    </div>
+                    <div className="space-y-3">
+                      <label className="font-mono text-xs text-neutral-500 uppercase tracking-widest">Google Gemini Agent Key</label>
+                      <input type="password" value={geminiKey} onChange={(e) => setGeminiKey(e.target.value)} placeholder="AIzaSyB..." className="w-full bg-black border border-white/[0.1] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#00FF41] transition-colors text-white font-mono placeholder:text-neutral-700" />
+                      <p className="text-xs text-[#FF003C] flex items-center gap-1 mt-2">
+                        <ShieldAlert className="w-3 h-3" /> Note: Keys are stored entirely in local browser memory.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <Toggle value={animations} onChange={setAnimations} />
-              </div>
+              )}
 
-              <div className="p-5 flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">Reduced Motion</h3>
-                  <p className="text-[#555] text-sm">Disable non-essential animations.</p>
+              {activeTab === "system" && (
+                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight mb-2">Data Ingestion</h2>
+                    <p className="text-neutral-400 text-sm">Configure how risk-LENS handles uploaded tech-stack files.</p>
+                  </div>
+                  <div className="bg-neutral-900 border border-white/[0.05] rounded-xl p-5">
+                    <p className="text-sm text-neutral-400 mb-4">
+                      Strict File Parsing is currently enabled. The system will reject SBOMs that do not conform strictly to CycloneDX or SPDX standards.
+                    </p>
+                    <button className="border border-neutral-700 text-white font-mono text-xs px-4 py-2 rounded hover:border-white transition-colors">
+                      Disable Strict Mode
+                    </button>
+                  </div>
                 </div>
-                <Toggle value={reducedMotion} onChange={setReducedMotion} />
-              </div>
+              )}
             </div>
-          </motion.section>
 
-          {/* Data Sources */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-12"
-          >
-            <h2 className="text-2xl font-bold mb-1 font-mono">Data Sources</h2>
-            <p className="text-[#00FF41] text-sm mb-6 font-mono">Manage vulnerability databases.</p>
-
-            <div className="glass border border-[#1a1a1a] rounded-2xl divide-y divide-[#1a1a1a]">
-              <div className="p-5 flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-lg">🔐</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold">National Vulnerability Database (NVD)</h3>
-                  <p className="text-[#00FF41] text-xs font-mono">API STATUS: CONNECTED</p>
-                </div>
-                <button className="border border-[#333] text-white text-xs px-3 py-2 rounded-lg hover:border-[#00FF41] font-mono">
-                  CONFIGURE API KEY
-                </button>
-              </div>
-
-              <div className="p-5 flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-lg">🛡️</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold">Open Source Vulnerabilities (OSV)</h3>
-                  <p className="text-[#00FF41] text-xs font-mono">API STATUS: CONNECTED</p>
-                </div>
-                <Toggle value={osvEnabled} onChange={setOsvEnabled} />
-              </div>
-
-              <div className="p-5 flex items-center gap-4">
-                <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center text-lg">🤖</div>
-                <div className="flex-1">
-                  <h3 className="font-semibold">Gemini AI Remediation</h3>
-                  <p className="text-[#00FF41] text-xs font-mono">API STATUS: CONNECTED</p>
-                </div>
-                <Toggle value={true} onChange={() => {}} />
-              </div>
-            </div>
-          </motion.section>
-
-          {/* Danger Zone */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <h2 className="text-2xl font-bold text-[#FF003C] mb-1 font-mono">Danger Zone</h2>
-            <p className="text-[#888] text-sm mb-6">Irreversible actions.</p>
-
-            <div className="glass-red rounded-2xl p-5 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-[#FF003C] font-mono">Clear Analysis Cache</h3>
-                <p className="text-[#555] text-sm">Delete all cached vulnerability data.</p>
-              </div>
+            {/* Global Save Button */}
+            <div className="mt-12 pt-6 border-t border-white/[0.05] flex justify-end">
               <button
-                onClick={handleClearCache}
-                className="border border-[#FF003C] text-[#FF003C] text-xs px-4 py-2 rounded-lg hover:bg-[#FF003C]/10 font-mono font-bold"
+                onClick={handleSave}
+                className={`flex items-center gap-2 font-mono font-bold px-6 py-3 rounded-lg text-xs uppercase tracking-wider transition-all duration-300 ${isSaved
+                    ? "bg-[#00FF41] text-black border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.4)]"
+                    : "bg-white text-black hover:bg-neutral-300"
+                  }`}
               >
-                {cleared ? "✓ CLEARED" : "CLEAR CACHE"}
+                {isSaved ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Settings Saved
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Save System Preferences
+                  </>
+                )}
               </button>
             </div>
-          </motion.section>
-        </main>
-      </div>
 
-      <footer className="border-t border-[#1a1a1a] py-4 px-6 flex items-center justify-between font-mono">
-        <p className="text-[#555] text-xs">RISK-LENS V1.4.2-STABLE</p>
-        <div className="flex gap-6 text-[#555] text-xs">
-          <a href="#" className="hover:text-white">DOCUMENTATION</a>
-          <a href="#" className="hover:text-white">SUPPORT</a>
-          <a href="#" className="hover:text-white">API REFERENCE</a>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
-  );
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      className={`relative w-12 h-6 rounded-full transition-all ${value ? "bg-[#00FF41]" : "bg-[#333]"}`}
-    >
-      <motion.div
-        animate={{ left: value ? 28 : 4 }}
-        transition={{ type: "spring", damping: 20 }}
-        className="absolute top-1 w-4 h-4 rounded-full bg-white"
-      />
-    </button>
   );
 }
