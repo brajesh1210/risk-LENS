@@ -1,40 +1,53 @@
-# risk-LENS
+# 👁️ risk-LENS
+**Enterprise Supply Chain Threat Intelligence & Blast Radius Topology**
 
-## 📋 Problem Statement: Supply Chain Vulnerability Visualizer
+[![Next.js](https://img.shields.io/badge/Next.js_16.2-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript_5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](#)
+[![Three.js](https://img.shields.io/badge/Three.js-black?style=for-the-badge&logo=three.js&logoColor=white)](#)
 
-### 📝 Description
-Modern companies are breached not through their own systems, but through trusted third-party vendors with weaker security postures. A single compromised npm package, SaaS integration, or cloud sub-processor can cascade into a full organizational breach.
+> **Live Prototype / Vercel Deployment:** https://risk-lens-nine.vercel.app/
 
-Security teams lack a unified view of how vendor dependencies interconnect and where the weakest links are. Build a tool that ingests a company's declared tech stack—libraries, SaaS tools, APIs, cloud providers—and generates an interactive dependency graph overlaid with known CVEs, breach history, and trust-chain depth.
+## 🚨 The Problem
+Modern enterprise software relies heavily on deeply nested, transitive open-source dependencies. When a zero-day vulnerability (like Log4Shell or a compromised npm package) hits, organizations spend days manually mapping their infrastructure to find the blast radius. 
 
-Risk scores surface the highest-priority exposure points for immediate remediation.
+## 🛡️ The Solution: risk-LENS
+risk-LENS is a zero-trust visualizer and autonomous remediation engine. It ingests software manifests, queries global vulnerability databases in real-time, and generates an interactive, hardware-accelerated topological map of your system's exact risk exposure.
 
-## 📦 Deliverables
-A web tool featuring:
+### 🔥 Core Features
+* **Dynamic Ingestion Deck:** Instantly parse `package.json` arrays or standard SBOMs (CycloneDX / SPDX formats).
+* **Dual-Render Topology Engine:** Toggle between a hardware-accelerated **3D Orbital Trust Matrix** (WebGL/Three.js) or a highly optimized **2D Flat Tree** with SVG Bezier connection lines.
+* **Live Threat Telemetry:** Real-time synchronization with the Google OSV (Open Source Vulnerability) database to flag CVEs and map critical security outliers instantly.
+* **Autonomous AI Remediation:** Integrated with Google Gemini to isolate infected operational scopes and deliver sandbox-safe patch commands and mitigation strategies.
+* **Cascade Breach Simulator:** Visually simulate the propagation route of a threat vector moving from a transitive dependency into the core enterprise network.
+* **Enterprise ROI Dashboard:** Dynamically calculates potential breach liabilities and compliance audit capital saved by automating dependency mapping.
 
-* **Tech Stack Ingestion:** Manual entry and file upload capabilities supporting standard formats (JSON/SBOM).
-* **Interactive Visualization:** A functional dependency graph visually mapping out nested systems and trust-chain depths.
-* **Vulnerability Analytics:** A live CVE overlay sourced from public security databases (NVD / OSV).
-* **Actionable Reporting:** An exportable risk summary report profiling prioritized exposure vulnerabilities for engineering triage.
+---
 
-## 🚀 Proposed Solution
-Modern enterprises are frequently breached through third-party dependencies rather than direct attacks. Our solution is an interactive supply chain visualizer that ingests a project's tech stack (JSON/SBOM), maps the trust-chain depth, and cross-references dependencies against live global threat databases (OSV).
+## 🛠️ Technical Architecture & Typescript Specs
 
-**The Differentiator:** We go beyond standard detection. Our platform integrates an AI-driven Remediation Engine powered by Gemini. When a vulnerable node is detected, the AI instantly provides context-aware explanations of the exploit, suggests secure library substitutions, and generates the exact code commands needed to patch the vulnerability.
+Built for enterprise-grade type safety and high-performance WebGL rendering.
 
-## ⚙️ Architecture Pipeline
-* **Ingestion Layer:** Multi-input parser for manual entry, package.json, or JSON/SBOM files.
-* **Threat Intel Engine:** Live querying via Google OSV API for zero-day and historical CVEs.
-* **Visualization Engine:** Interactive mapping of direct vs. transitive dependencies to calculate the blast radius.
-* **Remediation Layer:** Gemini AI intercepts high-risk nodes to generate safe library alternatives and patch scripts.
+* **Core Framework:** Next.js 16.2.6 (App Router), React 19.2.4
+* **Language Configuration:** TypeScript v5
+  * Fully strictly typed environment (`"strict": true`) targeting ES2017
+  * Custom module resolution with `@/*` path aliases
+* **3D Engine:** React Three Fiber (`@react-three/fiber`), Drei, and Three.js 0.184.0
+* **State Management:** Zustand v5 (Immutable global stores for graph data and UI overlays)
+* **Styling & Animation:** Tailwind CSS v4, Framer Motion, Lucide React
+* **External APIs:** * Google Open Source Vulnerabilities (OSV) API 
 
-## 🛠️ Tech Stack
-* **Frontend UI/UX:** Next.js & Tailwind CSS (for an enterprise-grade layout)
-* **Interactive Graphing:** React Flow (for draggable, visual dependency mapping)
-* **Vulnerability Database:** Google OSV API (Open Source Vulnerabilities)
-* **AI Security Assistant:** Gemini API (Context-aware remediation and substitutions)
-* **Deployment:** Vercel (Live hosted prototype)
+---
 
+## 💻 Local Execution & Setup
+
+The application is built for immediate local testing with zero complex database setup required.
+
+**1. Clone the repository**
+```bash
+git clone [https://github.com/your-username/risk-LENS.git](https://github.com/your-username/risk-LENS.git)
+cd risk-LENS
+npm install 
+```
 ## 👥 Team Name - Lorem Ipsum
 **Contributors:**
 * Ansh Patel
