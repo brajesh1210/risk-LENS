@@ -1,13 +1,33 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAnalysisStore } from "@/store/analysisStore";
-import { calculateROI, formatCurrency } from "@/lib/roiCalculator";
+import { X, TrendingDown, Clock, ShieldCheck, AlertTriangle } from "lucide-react";
 
 export function ROIDashboard() {
   const { showROIDashboard, toggleROIDashboard, currentAnalysis } = useAnalysisStore();
 
   if (!currentAnalysis) return null;
-  const roi = calculateROI(currentAnalysis);
+
+  // Extract dynamic values from the parsed JSON
+  const totalComponents = currentAnalysis.summary.totalComponents || 0;
+  const criticalCount = currentAnalysis.summary.criticalCount || 0;
+  const highCount = currentAnalysis.summary.highCount || 0;
+  const mediumCount = currentAnalysis.summary.mediumCount || 0;
+
+  // Cost of manual audit: ~$150/hr, takes ~2 hours per component to manually map
+  const manualAuditHours = totalComponents * 2;
+  const manualAuditCost = manualAuditHours * 150;
+
+  // Dynamic liability calculation so it never evaluates to 0.0M
+  // Includes a base risk factor + severity multipliers
+  const potentialLiability = 50000 + (criticalCount * 250000) + (highCount * 100000) + (mediumCount * 25000);
+
+  // Formatter to scale between K and M beautifully
+  const formatCurrency = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}k`;
+    return `$${val}`;
+  };
 
   return (
     <AnimatePresence>
@@ -16,152 +36,117 @@ export function ROIDashboard() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md z-[90] flex items-center justify-center p-8"
-          onClick={toggleROIDashboard}
+          // THE FIX: Inline high z-index and thick 95% black background to nuke graph bleed-through
+          style={{ zIndex: 999999 }}
+          className="fixed inset-0 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 md:p-6"
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-            className="glass rounded-2xl p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-[#00FF41]/20"
+            initial={{ scale: 0.95, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.95, y: 20 }}
+            style={{ zIndex: 1000000 }}
+            className="w-full max-w-5xl bg-[#0a0a0a] border border-white/[0.15] rounded-2xl shadow-[0_0_100px_rgba(0,0,0,1)] overflow-hidden flex flex-col max-h-[90vh] relative"
           >
-            <div className="flex items-center justify-between mb-8">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-white/[0.1] bg-[#050505]">
               <div>
-                <p className="text-[#00FF41] text-xs uppercase tracking-widest font-mono mb-1">
-                  ENTERPRISE ROI METRICS
+                <h2 className="text-2xl font-black font-mono tracking-tight text-white flex items-center gap-3">
+                  <span className="text-purple-500">💰</span> ENTERPRISE ROI METRICS
+                </h2>
+                <p className="text-neutral-400 text-xs font-mono uppercase tracking-widest mt-1">
+                  Financial telemetry & risk liability projections
                 </p>
-                <h2 className="text-3xl font-black">Financial Impact Analysis</h2>
               </div>
-              <button onClick={toggleROIDashboard} className="text-[#888] hover:text-white text-3xl">×</button>
+              <button
+                onClick={toggleROIDashboard}
+                className="p-2 bg-neutral-900 hover:bg-[#FF003C] hover:text-white text-neutral-400 rounded-lg transition-colors border border-white/[0.1]"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <ROICard
-                label="Estimated Breach Liability"
-                value={formatCurrency(roi.estimatedBreachCost)}
-                color="#FF003C"
-                desc="Total potential cost if all critical CVEs are exploited"
-                icon="💰"
-              />
-              <ROICard
-                label="Potential Regulatory Fines"
-                value={formatCurrency(roi.potentialFineAmount)}
-                color="#ff8800"
-                desc="GDPR/HIPAA exposure based on critical vulnerabilities"
-                icon="⚖️"
-              />
-              <ROICard
-                label="Annual Savings with risk-LENS"
-                value={formatCurrency(roi.annualSavings)}
-                color="#00FF41"
-                desc="Cost saved through automated vulnerability detection"
-                icon="📈"
-              />
-              <ROICard
-                label="Risk Reduction"
-                value={`${roi.riskReductionPercentage}%`}
-                color="#00FF41"
-                desc="Decrease in breach likelihood after remediation"
-                icon="🛡️"
-              />
-            </div>
+            {/* Content Body */}
+            <div className="p-6 md:p-8 overflow-y-auto space-y-8 bg-[#0a0a0a]">
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <StatCard label="Compliance Hours Saved" value={`${roi.complianceHoursSaved}h`} />
-              <StatCard label="Mean Time To Detect" value={`${roi.meanTimeToDetect}d`} />
-              <StatCard label="Components Audited" value={currentAnalysis.summary.totalComponents.toString()} />
-            </div>
+              {/* Top Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-            {/* Breakdown chart */}
-            <div className="glass-red rounded-xl p-6 mb-6">
-              <h3 className="font-bold mb-4 font-mono uppercase text-sm tracking-wider">Cost Breakdown by Severity</h3>
-              <div className="space-y-3">
-                <BreakdownBar
-                  label="Critical Vulnerabilities"
-                  count={currentAnalysis.summary.criticalCount}
-                  cost={currentAnalysis.summary.criticalCount * 250_000}
-                  color="#FF003C"
-                />
-                <BreakdownBar
-                  label="High Vulnerabilities"
-                  count={currentAnalysis.summary.highCount}
-                  cost={currentAnalysis.summary.highCount * 100_000}
-                  color="#ff8800"
-                />
-                <BreakdownBar
-                  label="Medium Vulnerabilities"
-                  count={currentAnalysis.summary.mediumCount}
-                  cost={currentAnalysis.summary.mediumCount * 25_000}
-                  color="#ffcc00"
-                />
+                {/* Restored Pink/Red Box styling */}
+                <div className="bg-[#111111] border border-[#FF003C]/40 rounded-xl p-6 relative overflow-hidden group hover:border-[#FF003C] transition-colors shadow-[0_0_20px_rgba(255,0,60,0.08)]">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <AlertTriangle className="w-24 h-24 text-[#FF003C]" />
+                  </div>
+                  <p className="text-[#FF003C] font-mono text-[10px] uppercase tracking-widest mb-2 font-bold">Estimated Breach Liability</p>
+                  <div className="text-4xl font-black font-mono text-[#FF003C] tracking-tighter">
+                    {formatCurrency(potentialLiability)}
+                  </div>
+                  <p className="text-neutral-400 text-xs mt-2 font-mono">Based on {criticalCount} critical, {highCount} high CVEs</p>
+                </div>
+
+                <div className="bg-[#111111] border border-purple-500/30 rounded-xl p-6 relative overflow-hidden group hover:border-purple-500 transition-colors shadow-[0_0_20px_rgba(168,85,247,0.05)]">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Clock className="w-24 h-24 text-purple-500" />
+                  </div>
+                  <p className="text-purple-500 font-mono text-[10px] uppercase tracking-widest mb-2 font-bold">Compliance Hours Saved</p>
+                  <div className="text-4xl font-black font-mono text-purple-500 tracking-tighter">
+                    {manualAuditHours}<span className="text-2xl">hrs</span>
+                  </div>
+                  <p className="text-neutral-400 text-xs mt-2 font-mono">Automated vs manual dependency mapping</p>
+                </div>
+
+                <div className="bg-[#111111] border border-[#00FF41]/30 rounded-xl p-6 relative overflow-hidden group hover:border-[#00FF41] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.05)]">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <TrendingDown className="w-24 h-24 text-[#00FF41]" />
+                  </div>
+                  <p className="text-[#00FF41] font-mono text-[10px] uppercase tracking-widest mb-2 font-bold">Audit Capital Saved</p>
+                  <div className="text-4xl font-black font-mono text-[#00FF41] tracking-tighter">
+                    ${(manualAuditCost / 1000).toFixed(1)}k
+                  </div>
+                  <p className="text-neutral-400 text-xs mt-2 font-mono">In saved security consulting fees</p>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-[#001a0d] border border-[#00FF41]/30 rounded-xl p-6 text-center">
-              <p className="text-[#00FF41] text-sm font-mono mb-2">EXECUTIVE SUMMARY</p>
-              <p className="text-2xl font-bold mb-2">
-                Investing in risk-LENS saves your organization{" "}
-                <span className="text-[#00FF41]">{formatCurrency(roi.annualSavings)}</span> annually
-              </p>
-              <p className="text-[#888]">
-                while reducing breach liability by{" "}
-                <span className="text-[#00FF41] font-bold">{roi.riskReductionPercentage}%</span>
-              </p>
+              {/* Chart / Detailed Breakdown area */}
+              <div className="border border-white/[0.1] bg-[#111111] rounded-xl overflow-hidden shadow-lg">
+                <div className="p-4 border-b border-white/[0.1] bg-[#050505]">
+                  <h3 className="font-mono text-sm font-bold text-white uppercase tracking-wider">Operational Cost Analysis</h3>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="font-mono text-sm text-white">Manual Security Audit (Legacy)</div>
+                        <div className="font-mono text-xs text-neutral-500">Traditional consulting approach mapping {totalComponents} nodes</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-lg font-bold text-neutral-400">${manualAuditCost.toLocaleString()}</div>
+                      </div>
+                    </div>
+                    <div className="w-full h-px bg-white/[0.1]" />
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="font-mono text-sm text-[#00FF41] flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4" /> risk-LENS Autonomous Audit
+                        </div>
+                        <div className="font-mono text-xs text-neutral-500">Real-time OSV mapping & AI patching integration</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-lg font-bold text-[#00FF41]">$0.00</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-[#00FF41]/10 border-t border-[#00FF41]/30">
+                  <p className="text-[#00FF41] font-mono text-xs text-center uppercase tracking-widest font-bold">
+                    Immediate ROI: 100% Capital Efficiency
+                  </p>
+                </div>
+              </div>
+
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-function ROICard({ label, value, color, desc, icon }: { label: string; value: string; color: string; desc: string; icon: string }) {
-  return (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      className="glass rounded-xl p-6 border"
-      style={{ borderColor: color + "33" }}
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="text-[#555] text-xs uppercase tracking-wider font-mono mb-1">{label}</p>
-          <p className="text-3xl font-black font-mono" style={{ color }}>{value}</p>
-        </div>
-        <span className="text-3xl opacity-50">{icon}</span>
-      </div>
-      <p className="text-[#888] text-xs">{desc}</p>
-    </motion.div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="glass rounded-xl p-4 text-center">
-      <p className="text-2xl font-black text-white font-mono">{value}</p>
-      <p className="text-[#555] text-xs uppercase tracking-wider font-mono mt-1">{label}</p>
-    </div>
-  );
-}
-
-function BreakdownBar({ label, count, cost, color }: { label: string; count: number; cost: number; color: string }) {
-  const max = 5_000_000;
-  const pct = Math.min((cost / max) * 100, 100);
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-1 font-mono">
-        <span className="text-[#888]">{label} ({count})</span>
-        <span style={{ color }}>{formatCurrency(cost)}</span>
-      </div>
-      <div className="bg-[#1a1a1a] rounded-full h-2">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="h-2 rounded-full"
-          style={{ background: color }}
-        />
-      </div>
-    </div>
   );
 }
